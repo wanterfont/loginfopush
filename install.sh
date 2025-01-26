@@ -41,6 +41,9 @@ SERVER_NAME=${SERVER_NAME:-$DEFAULT_SERVER_NAME}
 read -p "请输入服务器标签 (默认: $DEFAULT_SERVER_TAG): " SERVER_TAG
 SERVER_TAG=${SERVER_TAG:-$DEFAULT_SERVER_TAG}
 
+# 删除已存在的目录（如果存在）
+rm -rf "$INSTALL_DIR"
+
 # 创建所需目录
 mkdir -p "$INSTALL_DIR" "$CONFIG_DIR"
 
@@ -165,5 +168,6 @@ EOF
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
+systemctl restart "$SERVICE_NAME"
 
 echo "loginfopush 服务已安装并启动。"
