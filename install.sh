@@ -27,8 +27,8 @@ SERVICE_NAME="loginfopush.service"
 SERVICE_DIR="/etc/systemd/system"
 INSTALL_DIR="/opt/loginfopush"
 CONFIG_DIR="$INSTALL_DIR/config"
-EXECUTABLE_URL="https://loginfopus.xx/loginfopush"
-CONFIG_URL="https://loginfopus.xx/config.json"
+EXECUTABLE_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/loginfopush-linux-v0.0.1-amd64"
+CONFIG_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/config-example-v0.0.1.json"
 
 # 获取服务器信息
 DEFAULT_SERVER_NAME=$(hostname)
@@ -40,6 +40,9 @@ SERVER_NAME=${SERVER_NAME:-$DEFAULT_SERVER_NAME}
 
 read -p "请输入服务器标签 (默认: $DEFAULT_SERVER_TAG): " SERVER_TAG
 SERVER_TAG=${SERVER_TAG:-$DEFAULT_SERVER_TAG}
+
+# 删除已存在的目录（如果存在）
+rm -rf "$INSTALL_DIR"
 
 # 创建所需目录
 mkdir -p "$INSTALL_DIR" "$CONFIG_DIR"
@@ -77,8 +80,8 @@ if [[ $ENABLE_FCM == "y" ]]; then
     read -p "请输入 FCM webhook_url: " FCM_WEBHOOK
     read -p "请输入 FCM device_token: " FCM_TOKEN
     sed -i "s|\"fcm\": {.*\"enabled\": .*,|\"fcm\": {\"type\": \"fcm\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$FCM_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"device_token\": \".*\"|\"device_token\": \"$FCM_TOKEN\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"fcm\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$FCM_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"fcm\": {/,/}/ s|\"device_token\": \".*\"|\"device_token\": \"$FCM_TOKEN\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("fcm")
 else
     sed -i "s|\"fcm\": {.*\"enabled\": .*,|\"fcm\": {\"type\": \"fcm\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
@@ -90,8 +93,8 @@ if [[ $ENABLE_TG == "y" ]]; then
     read -p "请输入 Telegram webhook_url: " TG_WEBHOOK
     read -p "请输入 Telegram chat_id: " TG_CHATID
     sed -i "s|\"telegram\": {.*\"enabled\": .*,|\"telegram\": {\"type\": \"telegram\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$TG_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"chat_id\": \".*\"|\"chat_id\": \"$TG_CHATID\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"telegram\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$TG_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"telegram\": {/,/}/ s|\"chat_id\": \".*\"|\"chat_id\": \"$TG_CHATID\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("telegram")
 else
     sed -i "s|\"telegram\": {.*\"enabled\": .*,|\"telegram\": {\"type\": \"telegram\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
@@ -103,8 +106,8 @@ if [[ $ENABLE_BARK == "y" ]]; then
     read -p "请输入 Bark webhook_url: " BARK_WEBHOOK
     read -p "请输入 Bark device_token: " BARK_TOKEN
     sed -i "s|\"bark\": {.*\"enabled\": .*,|\"bark\": {\"type\": \"bark\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$BARK_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"device_token\": \".*\"|\"device_token\": \"$BARK_TOKEN\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"bark\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$BARK_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"bark\": {/,/}/ s|\"device_token\": \".*\"|\"device_token\": \"$BARK_TOKEN\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("bark")
 else
     sed -i "s|\"bark\": {.*\"enabled\": .*,|\"bark\": {\"type\": \"bark\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
@@ -118,7 +121,7 @@ configure_event() {
 
     read -p "是否启用${event_name}通知? (y/n, 默认: y): " ENABLE_EVENT
     ENABLE_EVENT=${ENABLE_EVENT:-y}  # 如果用户直接回车，默认为 y
-    
+
     if [[ $ENABLE_EVENT == "y" ]]; then
         sed -i "s|\"$event_type\": {.*\"enabled\": .*,|\"$event_type\": {\"type\": \"$event_type\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
 
@@ -165,5 +168,6 @@ EOF
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
+systemctl restart "$SERVICE_NAME"
 
 echo "loginfopush 服务已安装并启动。"

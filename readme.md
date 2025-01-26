@@ -1,4 +1,18 @@
-# 服务器安全通知系统
+# loginfopush
+
+## 使用
+通过一键脚本安装，并配置参数：
+`curl -fsSL https://wanterfont.github.io/loginfopush/install.sh -o install.sh && bash install.sh`
+
+消息内容参考：
+>✅ 服务器: clawcloud (🇭🇰) <br/>
+> IP: 47.108.002.001 登录成功 <br/>
+> 时间: 2025-01-26 22:52:03 <br/>
+> 位置: China-NanJing <br/>
+> 详情: IP 47.108.002.001[China-NanJing] 密钥登录成功
+
+
+___
 
 ## 简介
 这是一个服务器安全事件通知系统，可以监控并通过多种渠道推送服务器的登录尝试、封禁等安全事件。
