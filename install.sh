@@ -27,8 +27,8 @@ SERVICE_NAME="loginfopush.service"
 SERVICE_DIR="/etc/systemd/system"
 INSTALL_DIR="/opt/loginfopush"
 CONFIG_DIR="$INSTALL_DIR/config"
-EXECUTABLE_URL="https://loginfopus.xx/loginfopush"
-CONFIG_URL="https://loginfopus.xx/config.json"
+EXECUTABLE_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/loginfopush-linux-v0.0.1-amd64"
+CONFIG_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/config-example-v0.0.1.json"
 
 # 获取服务器信息
 DEFAULT_SERVER_NAME=$(hostname)
