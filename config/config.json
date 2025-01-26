@@ -57,7 +57,7 @@
     "login_success": {
       "type": "success",
       "enabled": true,
-      "title": "fail2ban",
+      "title": "loginfopush",
       "template": "✅ 服务器: {{.Server.Name}} ({{.Server.Tag}})\nIP: {{.IP}} 登录成功\n时间: {{.Time}}\n位置: {{.Location}}\n详情: {{.Details}}",
       "icon": "✅",
       "notifiers": ["fcm", "telegram", "bark", "wecom"]
