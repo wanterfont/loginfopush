@@ -80,8 +80,8 @@ if [[ $ENABLE_FCM == "y" ]]; then
     read -p "请输入 FCM webhook_url: " FCM_WEBHOOK
     read -p "请输入 FCM device_token: " FCM_TOKEN
     sed -i "s|\"fcm\": {.*\"enabled\": .*,|\"fcm\": {\"type\": \"fcm\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$FCM_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"device_token\": \".*\"|\"device_token\": \"$FCM_TOKEN\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"fcm\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$FCM_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"fcm\": {/,/}/ s|\"device_token\": \".*\"|\"device_token\": \"$FCM_TOKEN\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("fcm")
 else
     sed -i "s|\"fcm\": {.*\"enabled\": .*,|\"fcm\": {\"type\": \"fcm\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
@@ -93,8 +93,8 @@ if [[ $ENABLE_TG == "y" ]]; then
     read -p "请输入 Telegram webhook_url: " TG_WEBHOOK
     read -p "请输入 Telegram chat_id: " TG_CHATID
     sed -i "s|\"telegram\": {.*\"enabled\": .*,|\"telegram\": {\"type\": \"telegram\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$TG_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"chat_id\": \".*\"|\"chat_id\": \"$TG_CHATID\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"telegram\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$TG_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"telegram\": {/,/}/ s|\"chat_id\": \".*\"|\"chat_id\": \"$TG_CHATID\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("telegram")
 else
     sed -i "s|\"telegram\": {.*\"enabled\": .*,|\"telegram\": {\"type\": \"telegram\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
@@ -106,8 +106,8 @@ if [[ $ENABLE_BARK == "y" ]]; then
     read -p "请输入 Bark webhook_url: " BARK_WEBHOOK
     read -p "请输入 Bark device_token: " BARK_TOKEN
     sed -i "s|\"bark\": {.*\"enabled\": .*,|\"bark\": {\"type\": \"bark\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"webhook_url\": \".*\"|\"webhook_url\": \"$BARK_WEBHOOK\"|" "$CONFIG_DIR/config.json"
-    sed -i "s|\"device_token\": \".*\"|\"device_token\": \"$BARK_TOKEN\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"bark\": {/,/}/ s|\"webhook_url\": \".*\"|\"webhook_url\": \"$BARK_WEBHOOK\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"bark\": {/,/}/ s|\"device_token\": \".*\"|\"device_token\": \"$BARK_TOKEN\"|" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("bark")
 else
     sed -i "s|\"bark\": {.*\"enabled\": .*,|\"bark\": {\"type\": \"bark\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
