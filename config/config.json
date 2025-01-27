@@ -35,6 +35,14 @@
         "webhook_url": "http:/xxx",
         "send_key": "xxx"
       }
+    },
+    "wxpusher": {
+      "type": "wxpusher",
+      "enabled": true,
+      "config": {
+        "app_token": "AT_xxx",
+        "uids": ["UID_xxx"]
+      }
     }
   },
   "events": {

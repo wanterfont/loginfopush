@@ -8,6 +8,7 @@ const (
 	NotifierTypeTelegram NotifierType = "telegram" // Telegram Bot
 	NotifierTypeBark     NotifierType = "bark"     // Bark
 	NotifierTypeWeCom    NotifierType = "wecom"    // WeCom
+	NotifierTypeWxPusher NotifierType = "wxpusher" // WxPusher
 )
 
 // EventType 事件类型
@@ -54,6 +55,12 @@ type BarkConfig struct {
 type WeComConfig struct {
 	WebhookURL string `json:"webhook_url"` // Telegram Bot API URL
 	SendKey    string `json:"send_key"`    // 聊天 ID
+}
+
+// WxPusherConfig WxPusher 配置
+type WxPusherConfig struct {
+	AppToken string   `json:"app_token"` // WxPusher 应用 Token
+	UIDs     []string `json:"uids"`      // 接收消息的用户 ID 列表
 }
 
 // EventConfig 事件配置

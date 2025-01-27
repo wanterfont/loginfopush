@@ -68,6 +68,14 @@ func LoadConfig(configPath string) (*Config, error) {
 			}
 			notifier.Config = wecomConfig
 			config.Notifiers[name] = notifier
+		case NotifierTypeWxPusher:
+			var wxPusherConfig WxPusherConfig
+			data, _ := json.Marshal(notifier.Config)
+			if err := json.Unmarshal(data, &wxPusherConfig); err != nil {
+				return nil, fmt.Errorf("解析 WxPusher 配置失败: %v", err)
+			}
+			notifier.Config = wxPusherConfig
+			config.Notifiers[name] = notifier
 		default:
 			return nil, fmt.Errorf("不支持的通知类型: %s", notifier.Type)
 		}
