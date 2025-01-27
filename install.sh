@@ -113,6 +113,39 @@ else
     sed -i "s|\"bark\": {.*\"enabled\": .*,|\"bark\": {\"type\": \"bark\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
 fi
 
+# WxPusher 配置
+read -p "是否启用 WxPusher 通知? (y/n): " ENABLE_WXPUSHER
+if [[ $ENABLE_WXPUSHER == "y" ]]; then
+    read -p "请输入 WxPusher app_token: " WXPUSHER_TOKEN
+    
+    # 初始化空数组
+    WXPUSHER_UIDS=()
+    
+    while true; do
+        read -p "请输入 WxPusher uid (输入空行结束): " WXPUSHER_UID
+        if [ -z "$WXPUSHER_UID" ]; then
+            break
+        fi
+        WXPUSHER_UIDS+=("\"$WXPUSHER_UID\"")
+    done
+    
+    # 检查是否至少输入了一个 UID
+    if [ ${#WXPUSHER_UIDS[@]} -eq 0 ]; then
+        echo "错误: 至少需要输入一个 WxPusher UID"
+        exit 1
+    fi
+    
+    # 将数组转换为 JSON 格式
+    UIDS_JSON=$(IFS=,; echo "[${WXPUSHER_UIDS[*]}]")
+    
+    sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
+    sed -i "/\"wxpusher\": {/,/}/ s|\"app_token\": \".*\"|\"app_token\": \"$WXPUSHER_TOKEN\"|" "$CONFIG_DIR/config.json"
+    sed -i "/\"wxpusher\": {/,/}/ s|\"uids\": \[.*\]|\"uids\": $UIDS_JSON|" "$CONFIG_DIR/config.json"
+    ENABLED_NOTIFIERS+=("wxpusher")
+else
+    sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
+fi
+
 # 配置事件类型
 configure_event() {
     local event_name=$1
