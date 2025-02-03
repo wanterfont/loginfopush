@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"loginfopush/config"
 	"net/http"
 	"os"
 	"strings"
@@ -84,15 +85,26 @@ func (m *LogMonitor) processLine(line string) *Event {
 			switch m.config.Type {
 			case LogTypeFail2ban:
 				if strings.Contains(line, "Ban") {
+					// 检查 ban 事件是否启用
+					if !isEventEnabled("ban") {
+						return nil
+					}
 					event.Type = EventTypeBan
 					event.Details = fmt.Sprintf("IP %s[%s] 已被 fail2ban 封禁", event.IP, location)
 				} else if strings.Contains(line, "Found") {
+					// 检查 fail 事件是否启用
+					if !isEventEnabled("fail") {
+						return nil
+					}
 					event.Type = EventTypeFailure
 					event.Details = fmt.Sprintf("检测到来自 IP %s[%s] 的失败登录尝试", event.IP, location)
 				}
 			case LogTypeAuth:
 				if strings.Contains(line, "Accepted") {
-
+					// 检查 success 事件是否启用
+					if !isEventEnabled("success") {
+						return nil
+					}
 					event.Type = EventTypeSuccess
 					// 根据日志内容判断是密码登录还是密钥登录
 					if strings.Contains(line, "password") {
@@ -111,6 +123,22 @@ func (m *LogMonitor) processLine(line string) *Event {
 		}
 	}
 	return nil
+}
+
+// isEventEnabled 检查事件是否启用
+func isEventEnabled(eventType string) bool {
+	if config.GlobalConfig == nil {
+		return true // 如果配置未加载，默认启用所有事件
+	}
+
+	// 在事件配置中查找对应事件
+	for _, evt := range config.GlobalConfig.Events {
+		if string(evt.Type) == eventType {
+			return evt.Enabled
+		}
+	}
+
+	return false // 如果未找到事件配置，默认不启用
 }
 
 // extractIP 从日志行中提取 IP 地址
