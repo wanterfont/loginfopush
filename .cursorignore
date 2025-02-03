@@ -2,7 +2,7 @@
 
 .idea/
 # 配置文件
-/config/config_.json
+!config/config_.json
 
 # IDE 和编辑器文件
 .idea/
