@@ -1,7 +1,7 @@
 # loginfopush
 
 ## 使用
-通过一键脚本安装，并配置参数：
+通过一键脚本安装，并配置参数：<br/>
 `curl -fsSL https://wanterfont.github.io/loginfopush/install.sh -o install.sh && bash install.sh`
 
 消息内容参考：
@@ -11,6 +11,12 @@
 > 位置: China-NanJing <br/>
 > 详情: IP 47.108.002.001[China-NanJing] 密钥登录成功
 
+目前推送渠道支持：
+- FCM
+- TelgramBot
+- Bark
+- WxPusher
+- 企业微信
 
 ___
 
@@ -19,10 +25,7 @@ ___
 
 ## 功能特点
 - 多渠道通知支持
-  - Firebase Cloud Messaging (FCM)
-  - Telegram
-  - Bark
-  - 企业微信
+
 - 可配置的事件类型
   - 登录成功通知
   - 登录失败警告
@@ -47,6 +50,8 @@ ___
 
 4. **企业微信**
    - 需要配置 webhook_url 和 send_key
+5. **WxPuser**
+   - 需要配置 app_token 和 Uid
 
 ### 事件类型
 
@@ -75,10 +80,8 @@ ___
 - `{{.Details}}`: 详细信息
 
 ## 使用说明
-1. 复制 `config/config.json.example` 到 `config/config.json`
-2. 根据需要修改配置文件
-3. 配置所需的通知渠道
-4. 启用/禁用所需的事件通知
+通过一键脚本安装，并配置参数：<br/>
+`curl -fsSL https://wanterfont.github.io/loginfopush/install.sh -o install.sh && bash install.sh`
 
 ## 注意事项
 - 请妥善保管各通知渠道的 token 和密钥
