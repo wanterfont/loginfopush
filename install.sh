@@ -119,6 +119,13 @@ if [ -z "$SERVER_TAG" ]; then
     SERVER_TAG=${SERVER_TAG:-$DEFAULT_SERVER_TAG}
 fi
 
+# 检查日志文件是否存在
+if [ ! -f "/var/log/auth.log" ] && [ ! -f "/var/log/secure" ]; then
+    echo "错误: 未找到 /var/log/auth.log 或 /var/log/secure 文件。"
+    echo "请安装 rsyslog 以满足日志文件需求。"
+    exit 1
+fi
+
 # 删除已存在的目录（如果存在）
 rm -rf "$INSTALL_DIR"
 
