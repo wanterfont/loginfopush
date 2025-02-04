@@ -9,6 +9,7 @@ import (
 	"loginfopush/config"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -141,24 +142,22 @@ func isEventEnabled(eventType string) bool {
 	return false // 如果未找到事件配置，默认不启用
 }
 
-// extractIP 从日志行中提取 IP 地址
+// extractIP 从日志行中提取 IP 地址（支持 IPv4 和 IPv6）
 func extractIP(line string) string {
-	parts := strings.Fields(line)
-	for _, part := range parts {
-		if strings.Count(part, ".") == 3 {
-			isIP := true
-			for _, num := range strings.Split(part, ".") {
-				if len(num) == 0 || len(num) > 3 {
-					isIP = false
-					break
-				}
-			}
-			if isIP {
-				return part
-			}
-		}
-	}
-	return ""
+	// IPv4 正则表达式
+	ipv4Pattern := `(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)`
+	// IPv6 正则表达式
+	ipv6Pattern := `(\b([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}\b|\b([0-9a-fA-F]{1,4}:){1,7}:|\b([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}\b|\b([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}\b|\b([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}\b|\b([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}\b|\b([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}\b|\b[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})\b|\b:((:[0-9a-fA-F]{1,4}){1,7}|:)\b|\bfe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}\b|\b::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]|[1-9]?)?[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]|[1-9]?)?[0-9])\b|\b([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]|[1-9]?)?[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]|[1-9]?)?[0-9])\b)`
+
+	// 合并 IPv4 和 IPv6 正则表达式
+	ipPattern := fmt.Sprintf("%s|%s", ipv4Pattern, ipv6Pattern)
+
+	// 编译正则表达式
+	re := regexp.MustCompile(ipPattern)
+
+	// 查找匹配的 IP 地址
+	match := re.FindString(line)
+	return match
 }
 
 // 根据ip 地址查询归属 https://api.ip.sb/geoip/
