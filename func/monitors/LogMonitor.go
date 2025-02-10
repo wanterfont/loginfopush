@@ -160,36 +160,56 @@ func extractIP(line string) string {
 	return match
 }
 
-// 根据ip 地址查询归属 https://api.ip.sb/geoip/
+// getIPLocation 修改后的函数，添加重试机制和错误处理
 func getIPLocation(ip string) (string, error) {
-	// 请求超时时间 2s
-	client := &http.Client{
-		Timeout: 2 * time.Second,
+	// 如果 IP 为空，直接返回
+	if ip == "" {
+		return "未知位置", nil
 	}
-	// 设置请求头
-	request, err := http.NewRequest("GET", fmt.Sprintf("https://api.ip.sb/geoip/%s", ip), nil)
-	if err != nil {
-		return "", err
+
+	// 最大重试次数
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		// 请求超时时间增加到 5s
+		client := &http.Client{
+			Timeout: 5 * time.Second,
+		}
+
+		request, err := http.NewRequest("GET", fmt.Sprintf("https://api.ip.sb/geoip/%s", ip), nil)
+		if err != nil {
+			return "未知位置", err
+		}
+
+		request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+
+		response, err := client.Do(request)
+		if err != nil {
+			// 如果不是最后一次重试，则等待后继续
+			if i < maxRetries-1 {
+				time.Sleep(time.Second * time.Duration(i+1))
+				continue
+			}
+			return "未知位置", err
+		}
+		defer response.Body.Close()
+
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return "未知位置", err
+		}
+
+		var ipInfo map[string]interface{}
+		err = json.Unmarshal(body, &ipInfo)
+		if err != nil {
+			return "未知位置", err
+		}
+
+		// 获取国家,城市 拼接，如果没有城市，则只返回国家
+		if city, ok := ipInfo["city"]; ok {
+			return fmt.Sprintf("%s-%s", ipInfo["country"].(string), city.(string)), nil
+		}
+		return fmt.Sprintf("%s", ipInfo["country"]), nil
 	}
-	request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
-	response, err := client.Do(request)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-	// 解析json
-	var ipInfo map[string]interface{}
-	err = json.Unmarshal(body, &ipInfo)
-	if err != nil {
-		return "", err
-	}
-	// 获取国家,城市 拼接，如果没有城市，则只返回国家
-	if city, ok := ipInfo["city"]; ok {
-		return fmt.Sprintf("%s-%s", ipInfo["country"].(string), city.(string)), nil
-	}
-	return fmt.Sprintf("%s", ipInfo["country"]), nil
+
+	return "未知位置", fmt.Errorf("获取位置信息失败，已达到最大重试次数")
 }
