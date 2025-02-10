@@ -1,8 +1,16 @@
 # loginfopush
+> 通过读取`/var/log/secure`或`/var/log/auth.log` 文件，监听登录事件，并推送到指定的通知渠道。
+> 
+
+
 
 ## 使用
 通过一键脚本安装，并配置参数：<br/>
 `curl -fsSL https://wanterfont.github.io/loginfopush/install.sh -o install.sh && bash install.sh`
+
+前置准备:
+1. 准备好自己的[消息推送渠道](使用fcm%7Cbark%7Ctelegram推送消息.md)
+2. 安装 `rsyslog` 并重启
 
 消息内容参考：
 >✅ 服务器: clawcloud (🇭🇰) <br/>
