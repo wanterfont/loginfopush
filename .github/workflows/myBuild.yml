@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ env.GO_VERSION || '1.21' }}  # 动态指定 Go 版本
+        go-version: ${{ env.GO_VERSION || '1.13' }}  # 动态指定 Go 版本
 
     - name: Build
       run: |
