@@ -23,6 +23,11 @@ type LogMonitor struct {
 
 // NewLogMonitor 创建新的日志监控器
 func NewLogMonitor(config LogConfig) (*LogMonitor, error) {
+	// 首先检查是否需要监控这种类型的日志
+	if !shouldMonitorLogType(config.Type) {
+		return nil, fmt.Errorf("日志类型 %v 的所有事件均未启用，跳过监控", config.Type)
+	}
+
 	file, err := os.Open(config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("error opening log file %s: %v", config.Path, err)

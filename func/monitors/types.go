@@ -1,5 +1,7 @@
 package monitors
 
+import "loginfopush/config"
+
 // LogType 定义日志类型
 type LogType string
 
@@ -63,4 +65,32 @@ var LogConfigs = []LogConfig{
 			"session opened for user", // 会话开启
 		},
 	},
+}
+
+// shouldMonitorLogType 判断是否需要监控特定类型的日志
+func shouldMonitorLogType(logType LogType) bool {
+	if config.GlobalConfig == nil {
+		return true // 如果配置未加载，默认监控所有日志
+	}
+
+	switch logType {
+	case LogTypeFail2ban:
+		// 检查是否启用了 ban 或 fail 事件
+		for _, evt := range config.GlobalConfig.Events {
+			if (evt.Type == "ban" || evt.Type == "fail") && evt.Enabled {
+				return true
+			}
+		}
+		return false
+	case LogTypeAuth:
+		// 检查是否启用了 success 事件
+		for _, evt := range config.GlobalConfig.Events {
+			if evt.Type == "success" && evt.Enabled {
+				return true
+			}
+		}
+		return false
+	default:
+		return false
+	}
 }

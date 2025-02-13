@@ -101,8 +101,32 @@ SERVICE_NAME="loginfopush.service"
 SERVICE_DIR="/etc/systemd/system"
 INSTALL_DIR="/opt/loginfopush"
 CONFIG_DIR="$INSTALL_DIR/config"
-EXECUTABLE_URL="https://github.com/wanterfont/loginfopush/releases/download/v0.0.2/loginfopush-linux-v0.0.2-amd64"
+VERSION="v0.0.3"
 CONFIG_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/config-example-v0.0.1.json"
+
+# 检测系统架构
+detect_arch() {
+    local arch=$(uname -m)
+    case $arch in
+        x86_64)
+            echo "amd64"
+            ;;
+        aarch64)
+            echo "arm64"
+            ;;
+        *)
+            echo "错误: 不支持的系统架构: $arch"
+            exit 1
+            ;;
+    esac
+}
+
+# 获取系统架构
+ARCH=$(detect_arch)
+echo "检测到系统架构: $ARCH"
+
+# 根据架构设置可执行文件 URL
+EXECUTABLE_URL="https://github.com/wanterfont/loginfopush/releases/download/$VERSION/loginfopush-linux-$VERSION-$ARCH"
 
 # 获取服务器信息（如果未通过参数指定）
 DEFAULT_SERVER_NAME=$(hostname)

@@ -10,6 +10,7 @@ import (
 	_ "loginfopush/notifier/telegram" // 注册 Telegram 通知器
 	_ "loginfopush/notifier/wecom"    // 注册 WeCom 通知器
 	_ "loginfopush/notifier/wxpusher" // 注册 WxPusher 通知器
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,13 +50,21 @@ func StartMonitor() error {
 	// 创建等待组
 	var wg sync.WaitGroup
 
+	// 记录是否有任何监控器成功启动
+	monitorsStarted := false
+
 	// 启动所有配置的日志监控
 	for _, config := range monitors.LogConfigs {
 		m, err := monitors.NewLogMonitor(config)
 		if err != nil {
+			if strings.Contains(err.Error(), "均未启用") {
+				fmt.Printf("跳过监控 %s: %v\n", config.Path, err)
+				continue
+			}
 			fmt.Printf("警告: 无法启动 %s 监控: %v\n", config.Path, err)
 			continue
 		}
+		monitorsStarted = true
 		defer m.Close()
 
 		wg.Add(1)
@@ -63,6 +72,11 @@ func StartMonitor() error {
 			defer wg.Done()
 			m.Start(eventChan)
 		}(m)
+	}
+
+	// 如果没有任何监控器启动，返回错误
+	if !monitorsStarted {
+		return fmt.Errorf("未能启动任何日志监控，请检查配置和事件启用状态")
 	}
 
 	// 启动事件处理
