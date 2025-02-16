@@ -91,11 +91,11 @@ func startMonitors() {
 			continue
 		}
 		monitorsStarted = true
-		defer m.Close()
 
 		monitorWg.Add(1)
 		go func(m *monitors.LogMonitor) {
 			defer monitorWg.Done()
+			defer m.Close() // 移动到这里，确保在监控器实际停止时关闭文件
 			m.Start(eventChan, monitorStopChan)
 		}(m)
 	}
