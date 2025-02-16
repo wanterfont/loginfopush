@@ -101,7 +101,7 @@ SERVICE_NAME="loginfopush.service"
 SERVICE_DIR="/etc/systemd/system"
 INSTALL_DIR="/opt/loginfopush"
 CONFIG_DIR="$INSTALL_DIR/config"
-VERSION="v0.0.3"
+VERSION="v0.0.4"
 CONFIG_URL="https://github.com/wanterfont/loginfopush/releases/download/V0.0.1/config-example-v0.0.1.json"
 
 # 检测系统架构
