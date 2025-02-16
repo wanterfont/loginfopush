@@ -16,6 +16,8 @@ import (
 )
 
 var notifierManager *notifier.NotifierManager
+var monitorWg sync.WaitGroup
+var monitorStopChan chan struct{}
 
 // InitMonitor 初始化监控系统
 func InitMonitor(cfg *config.Config) error {
@@ -42,13 +44,37 @@ func sendNotification(event monitors.Event) error {
 	return notifierManager.SendEvent(config.EventType(event.Type), data)
 }
 
-// StartMonitor 启动所有日志监控
-func StartMonitor() error {
+// scheduleRestart 调度定时重启
+func scheduleRestart() {
+	for {
+		now := time.Now()
+		next := time.Date(now.Year(), now.Month(), now.Day(), 12, 5, 0, 0, now.Location())
+		if now.After(next) {
+			next = next.Add(24 * time.Hour)
+		}
+
+		duration := next.Sub(now)
+		fmt.Printf("下次重启时间: %v (%.2f 小时后)\n", next.Format("2006-01-02 15:04:05"), duration.Hours())
+
+		select {
+		case <-time.After(duration):
+			fmt.Println("执行定时重启...")
+			// 通知所有监控器停止
+			close(monitorStopChan)
+			// 等待所有监控器停止
+			monitorWg.Wait()
+			// 重新创建停止通道
+			monitorStopChan = make(chan struct{})
+			// 重新启动监控
+			go startMonitors()
+		}
+	}
+}
+
+// startMonitors 启动所有监控器
+func startMonitors() {
 	// 创建事件通道
 	eventChan := make(chan monitors.Event)
-
-	// 创建等待组
-	var wg sync.WaitGroup
 
 	// 记录是否有任何监控器成功启动
 	monitorsStarted := false
@@ -67,16 +93,17 @@ func StartMonitor() error {
 		monitorsStarted = true
 		defer m.Close()
 
-		wg.Add(1)
+		monitorWg.Add(1)
 		go func(m *monitors.LogMonitor) {
-			defer wg.Done()
-			m.Start(eventChan)
+			defer monitorWg.Done()
+			m.Start(eventChan, monitorStopChan)
 		}(m)
 	}
 
 	// 如果没有任何监控器启动，返回错误
 	if !monitorsStarted {
-		return fmt.Errorf("未能启动任何日志监控，请检查配置和事件启用状态")
+		fmt.Printf("未能启动任何日志监控，请检查配置和事件启用状态\n")
+		return
 	}
 
 	// 启动事件处理
@@ -89,8 +116,19 @@ func StartMonitor() error {
 			}
 		}
 	}()
+}
 
-	// 等待所有监控结束
-	wg.Wait()
-	return nil
+// StartMonitor 启动监控
+func StartMonitor() error {
+	// 初始化停止通道
+	monitorStopChan = make(chan struct{})
+
+	// 启动定时重启协程
+	go scheduleRestart()
+
+	// 启动监控
+	startMonitors()
+
+	// 保持主程序运行
+	select {}
 }

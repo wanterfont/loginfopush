@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,8 @@ type LogMonitor struct {
 	config LogConfig
 	file   *os.File
 	reader *bufio.Reader
+	path   string // 保存文件路径
+	offset int64  // 保存读取位置
 }
 
 // NewLogMonitor 创建新的日志监控器
@@ -34,13 +37,20 @@ func NewLogMonitor(config LogConfig) (*LogMonitor, error) {
 	}
 
 	// 移动到文件末尾
-	file.Seek(0, 2)
+	offset, err := file.Seek(0, 2)
+	if err != nil {
+		file.Close()
+		return nil, fmt.Errorf("error seeking file %s: %v", config.Path, err)
+	}
+
 	reader := bufio.NewReader(file)
 
 	return &LogMonitor{
 		config: config,
 		file:   file,
 		reader: reader,
+		path:   config.Path,
+		offset: offset,
 	}, nil
 }
 
@@ -49,24 +59,82 @@ func (m *LogMonitor) Close() error {
 	return m.file.Close()
 }
 
+// reopenFile 重新打开文件
+func (m *LogMonitor) reopenFile() error {
+	// 关闭现有文件
+	if m.file != nil {
+		m.file.Close()
+	}
+
+	// 重新打开文件
+	file, err := os.Open(m.path)
+	if err != nil {
+		return fmt.Errorf("error reopening file: %v", err)
+	}
+
+	// 获取文件大小
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return fmt.Errorf("error getting file info: %v", err)
+	}
+
+	// 如果文件大小小于之前的偏移量，说明文件被轮转了
+	if info.Size() < m.offset {
+		m.offset = 0
+	}
+
+	// 设置偏移量
+	_, err = file.Seek(m.offset, 0)
+	if err != nil {
+		file.Close()
+		return fmt.Errorf("error seeking file: %v", err)
+	}
+
+	m.file = file
+	m.reader = bufio.NewReader(file)
+	return nil
+}
+
 // Start 开始监控
-func (m *LogMonitor) Start(eventChan chan<- Event) {
+func (m *LogMonitor) Start(eventChan chan<- Event, stopChan <-chan struct{}) {
 	fmt.Printf("开始监控日志文件: %s\n", m.config.Path)
 
 	for {
-		line, err := m.reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				time.Sleep(100 * time.Millisecond)
+		select {
+		case <-stopChan:
+			fmt.Printf("停止监控日志文件: %s\n", m.config.Path)
+			return
+		default:
+			line, err := m.reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					// 保存当前位置
+					if m.file != nil {
+						m.offset, _ = m.file.Seek(0, 1)
+					}
+
+					// 检查文件是否被轮转
+					if err := m.reopenFile(); err != nil {
+						fmt.Printf("重新打开文件失败: %v\n", err)
+						time.Sleep(5 * time.Second)
+					}
+
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+				fmt.Printf("读取日志错误: %v\n", err)
+				time.Sleep(1 * time.Second)
 				continue
 			}
-			fmt.Printf("读取日志错误: %v\n", err)
-			continue
-		}
 
-		// 处理日志行
-		if event := m.processLine(line); event != nil {
-			eventChan <- *event
+			// 更新偏移量
+			m.offset += int64(len(line))
+
+			// 处理日志行
+			if event := m.processLine(line); event != nil {
+				eventChan <- *event
+			}
 		}
 	}
 }
@@ -165,17 +233,37 @@ func extractIP(line string) string {
 	return match
 }
 
-// getIPLocation 修改后的函数，添加重试机制和错误处理
+// 使用缓存的 IP 位置信息
+var (
+	ipLocationCache = make(map[string]ipLocationInfo)
+	ipCacheMutex    sync.RWMutex
+)
+
+type ipLocationInfo struct {
+	location  string
+	timestamp time.Time
+}
+
+// getIPLocation 修改后的函数，添加缓存机制
 func getIPLocation(ip string) (string, error) {
-	// 如果 IP 为空，直接返回
 	if ip == "" {
 		return "未知位置", nil
 	}
 
+	// 检查缓存
+	ipCacheMutex.RLock()
+	if info, exists := ipLocationCache[ip]; exists {
+		// 如果缓存未过期（24小时内）
+		if time.Since(info.timestamp) < 24*time.Hour {
+			ipCacheMutex.RUnlock()
+			return info.location, nil
+		}
+	}
+	ipCacheMutex.RUnlock()
+
 	// 最大重试次数
 	maxRetries := 3
 	for i := 0; i < maxRetries; i++ {
-		// 请求超时时间增加到 5s
 		client := &http.Client{
 			Timeout: 5 * time.Second,
 		}
@@ -189,7 +277,6 @@ func getIPLocation(ip string) (string, error) {
 
 		response, err := client.Do(request)
 		if err != nil {
-			// 如果不是最后一次重试，则等待后继续
 			if i < maxRetries-1 {
 				time.Sleep(time.Second * time.Duration(i+1))
 				continue
@@ -209,11 +296,22 @@ func getIPLocation(ip string) (string, error) {
 			return "未知位置", err
 		}
 
-		// 获取国家,城市 拼接，如果没有城市，则只返回国家
+		var location string
 		if city, ok := ipInfo["city"]; ok {
-			return fmt.Sprintf("%s-%s", ipInfo["country"].(string), city.(string)), nil
+			location = fmt.Sprintf("%s-%s", ipInfo["country"].(string), city.(string))
+		} else {
+			location = fmt.Sprintf("%s", ipInfo["country"])
 		}
-		return fmt.Sprintf("%s", ipInfo["country"]), nil
+
+		// 更新缓存
+		ipCacheMutex.Lock()
+		ipLocationCache[ip] = ipLocationInfo{
+			location:  location,
+			timestamp: time.Now(),
+		}
+		ipCacheMutex.Unlock()
+
+		return location, nil
 	}
 
 	return "未知位置", fmt.Errorf("获取位置信息失败，已达到最大重试次数")
