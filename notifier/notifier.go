@@ -121,17 +121,28 @@ func (m *NotifierManager) SendEvent(eventType config.EventType, data map[string]
 	return lastErr
 }
 
-// SendTextMessage 发送简单的文本通知到所有启用的通知器
-func (m *NotifierManager) SendTextMessage(title, content string) error {
+// SendConnectionAlert 发送连接数告警通知
+func (m *NotifierManager) SendConnectionAlert(alertMessage string) error {
+	// 准备模板数据
+	templateData := TemplateData{
+		Server:  m.config.Server,
+		Details: alertMessage, // 将告警信息放入 Details 字段
+	}
+
+	// 渲染模板
+	content, err := RenderTemplate(m.config.ConnectionMonitor.Template, templateData)
+	if err != nil {
+		return fmt.Errorf("渲染连接告警模板失败: %v", err)
+	}
+
+	// 构建消息
 	msg := Message{
-		Title:   title,
+		Title:   "服务器连接数告警",
 		Content: content,
 	}
 
-	fmt.Printf("Sending text message: %s\n", content)
-
-	var lastErr error
 	// 发送到所有启用的通知器
+	var lastErr error
 	for name, notifier := range m.notifiers {
 		if err := notifier.Send(msg); err != nil {
 			lastErr = fmt.Errorf("通知器 %s 发送失败: %v", name, err)

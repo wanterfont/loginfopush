@@ -51,22 +51,21 @@ func CheckConnections(cfg config.ConnectionMonitorConfig) ([]string, error) {
 
 func getTCPConnectionCount() (int, error) {
 	switch runtime.GOOS {
-	case "linux", "darwin":
-		// ss is faster than netstat
-		cmd := exec.Command("sh", "-c", "ss -tn | wc -l")
+	case "linux":
+		cmd := exec.Command("sh", "-c", "netstat -ant | grep '^tcp' | wc -l")
 		return executeAndParse(cmd)
 	default:
-		return 0, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+		return 0, fmt.Errorf("unsupported operating system for connection monitoring: %s", runtime.GOOS)
 	}
 }
 
 func getUDPConnectionCount() (int, error) {
 	switch runtime.GOOS {
-	case "linux", "darwin":
-		cmd := exec.Command("sh", "-c", "ss -un | wc -l")
+	case "linux":
+		cmd := exec.Command("sh", "-c", "netstat -anu | grep '^udp' | wc -l")
 		return executeAndParse(cmd)
 	default:
-		return 0, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+		return 0, fmt.Errorf("unsupported operating system for connection monitoring: %s", runtime.GOOS)
 	}
 }
 
@@ -83,11 +82,6 @@ func executeAndParse(cmd *exec.Cmd) (int, error) {
 	count, err := strconv.Atoi(countStr)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse count: %s, error: %w", countStr, err)
-	}
-
-	// The count from wc -l includes the header line, so subtract 1 on linux
-	if runtime.GOOS == "linux" && count > 0 {
-		return count - 1, nil
 	}
 
 	return count, nil

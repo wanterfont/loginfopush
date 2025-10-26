@@ -75,10 +75,11 @@ type EventConfig struct {
 
 // ConnectionMonitorConfig 连接监控配置
 type ConnectionMonitorConfig struct {
-	Enabled        bool `json:"enabled"`         // 是否启用
-	TCPThreshold   int  `json:"tcp_threshold"`   // TCP 连接数阈值
-	UDPThreshold   int  `json:"udp_threshold"`   // UDP 连接数阈值
-	TotalThreshold int  `json:"total_threshold"` // 总连接数阈值
+	Enabled        bool   `json:"enabled"`         // 是否启用
+	TCPThreshold   int    `json:"tcp_threshold"`   // TCP 连接数阈值
+	UDPThreshold   int    `json:"udp_threshold"`   // UDP 连接数阈值
+	TotalThreshold int    `json:"total_threshold"` // 总连接数阈值
+	Template       string `json:"template"`        // 告警消息模板
 }
 
 // Config 总配置结构

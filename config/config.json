@@ -7,7 +7,9 @@
     "enabled": true,
     "tcp_threshold": 2,
     "udp_threshold": 1,
-    "total_threshold": 3
+    "total_threshold": 3,
+    "template": "⚠️ 服务器: {{.Server.Name}} ({{.Server.Tag}})\n详情: {{.Details}}"
+     
   },
   "notifiers": {
     "fcm": {
@@ -77,4 +79,4 @@
       "notifiers": ["fcm", "telegram", "bark", "wecom"]
     }
   }
-} 
+}

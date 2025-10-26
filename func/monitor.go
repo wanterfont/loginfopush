@@ -147,7 +147,7 @@ func startConnectionMonitor() {
 
 			for _, msg := range messages {
 				fmt.Printf("连接数告警: %s\n", msg)
-				if err := notifierManager.SendTextMessage("服务器连接数告警", msg); err != nil {
+				if err := notifierManager.SendConnectionAlert(msg); err != nil {
 					fmt.Printf("发送连接数告警失败: %v\n", err)
 				}
 			}
