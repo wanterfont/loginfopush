@@ -120,3 +120,24 @@ func (m *NotifierManager) SendEvent(eventType config.EventType, data map[string]
 
 	return lastErr
 }
+
+// SendTextMessage 发送简单的文本通知到所有启用的通知器
+func (m *NotifierManager) SendTextMessage(title, content string) error {
+	msg := Message{
+		Title:   title,
+		Content: content,
+	}
+
+	fmt.Printf("Sending text message: %s\n", content)
+
+	var lastErr error
+	// 发送到所有启用的通知器
+	for name, notifier := range m.notifiers {
+		if err := notifier.Send(msg); err != nil {
+			lastErr = fmt.Errorf("通知器 %s 发送失败: %v", name, err)
+			fmt.Printf("警告: %v\n", lastErr)
+		}
+	}
+
+	return lastErr
+}

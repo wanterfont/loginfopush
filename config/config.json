@@ -3,6 +3,12 @@
     "name": "MyServer",
     "tag": "tags"
   },
+  "connection_monitor": {
+    "enabled": true,
+    "tcp_threshold": 2,
+    "udp_threshold": 1,
+    "total_threshold": 3
+  },
   "notifiers": {
     "fcm": {
       "type": "fcm",

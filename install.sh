@@ -252,9 +252,9 @@ fi
 # WxPusher 配置
 if [ ! -z "$WXPUSHER_TOKEN" ] && [ ! -z "$WXPUSHER_UIDS" ]; then
     # 如果有参数传入，直接使用参数值
-    sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-    sed -i "/\"wxpusher\": {/,/}/ s|\"app_token\": \".*\"|\"app_token\": \"$WXPUSHER_TOKEN\"|" "$CONFIG_DIR/config.json"
-    sed -i "/\"wxpusher\": {/,/}/ s|\"uids\": \[.*\]|\"uids\": [$WXPUSHER_UIDS]|" "$CONFIG_DIR/config.json"
+    sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": true,|}" "$CONFIG_DIR/config.json"
+    sed -i "/\"wxpusher\": {/,/}/ s|\"app_token\": \".*\"|\"app_token\": \"$WXPUSHER_TOKEN\"|}" "$CONFIG_DIR/config.json"
+    sed -i "/\"wxpusher\": {/,/}/ s|\"uids\": \[.*\]|\"uids\": [$WXPUSHER_UIDS]|}" "$CONFIG_DIR/config.json"
     ENABLED_NOTIFIERS+=("wxpusher")
 else
     # 如果没有参数，才询问用户
@@ -282,16 +282,40 @@ else
         # 将数组转换为 JSON 格式
         UIDS_JSON=$(IFS=,; echo "[${WXPUSHER_UIDS[*]}]")
         
-        sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": true,|" "$CONFIG_DIR/config.json"
-        sed -i "/\"wxpusher\": {/,/}/ s|\"app_token\": \".*\"|\"app_token\": \"$WXPUSHER_TOKEN\"|" "$CONFIG_DIR/config.json"
-        sed -i "/\"wxpusher\": {/,/}/ s|\"uids\": \[.*\]|\"uids\": $UIDS_JSON|" "$CONFIG_DIR/config.json"
+        sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": true,|}" "$CONFIG_DIR/config.json"
+        sed -i "/\"wxpusher\": {/,/}/ s|\"app_token\": \".*\"|\"app_token\": \"$WXPUSHER_TOKEN\"|}" "$CONFIG_DIR/config.json"
+        sed -i "/\"wxpusher\": {/,/}/ s|\"uids\": \[.*\]|\"uids\": $UIDS_JSON|}" "$CONFIG_DIR/config.json"
         ENABLED_NOTIFIERS+=("wxpusher")
     else
-        sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": false,|" "$CONFIG_DIR/config.json"
+        sed -i "s|\"wxpusher\": {.*\"enabled\": .*,|\"wxpusher\": {\"type\": \"wxpusher\", \"enabled\": false,|}" "$CONFIG_DIR/config.json"
     fi
 fi
 
+# 连接数监控配置
+read -p "是否启用连接数监控? (y/n, 默认: y): " ENABLE_CONN_MONITOR
+ENABLE_CONN_MONITOR=${ENABLE_CONN_MONITOR:-y}
+
+if [[ $ENABLE_CONN_MONITOR == "y" ]]; then
+    sed -i '/"connection_monitor": {/,/}/ s/"enabled": .*/"enabled": true,/' "$CONFIG_DIR/config.json"
+
+    read -p "请输入 TCP 连接数阈值 (默认: 1000): " TCP_THRESHOLD
+    TCP_THRESHOLD=${TCP_THRESHOLD:-1000}
+    sed -i "s/\"tcp_threshold\": .*,/\"tcp_threshold\": $TCP_THRESHOLD,/" "$CONFIG_DIR/config.json"
+
+    read -p "请输入 UDP 连接数阈值 (默认: 500): " UDP_THRESHOLD
+    UDP_THRESHOLD=${UDP_THRESHOLD:-500}
+    sed -i "s/\"udp_threshold\": .*,/\"udp_threshold\": $UDP_THRESHOLD,/" "$CONFIG_DIR/config.json"
+
+    read -p "请输入总连接数阈值 (默认: 1500): " TOTAL_THRESHOLD
+    TOTAL_THRESHOLD=${TOTAL_THRESHOLD:-1500}
+    sed -i "s/\"total_threshold\": .*/\"total_threshold\": $TOTAL_THRESHOLD/" "$CONFIG_DIR/config.json"
+else
+    sed -i '/"connection_monitor": {/,/}/ s/"enabled": .*/"enabled": false,/' "$CONFIG_DIR/config.json"
+fi
+
+
 # 配置事件类型
+
 configure_event() {
     local event_name=$1
     local event_type=$2

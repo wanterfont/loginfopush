@@ -18,9 +18,11 @@ import (
 var notifierManager *notifier.NotifierManager
 var monitorWg sync.WaitGroup
 var monitorStopChan chan struct{}
+var globalConfig *config.Config
 
 // InitMonitor 初始化监控系统
 func InitMonitor(cfg *config.Config) error {
+	globalConfig = cfg
 	var err error
 	notifierManager, err = notifier.NewNotifierManager(cfg)
 	if err != nil {
@@ -67,11 +69,14 @@ func scheduleRestart() {
 			monitorStopChan = make(chan struct{})
 			// 重新启动监控
 			go startMonitors()
+			go startConnectionMonitor()
+		case <-monitorStopChan:
+			return
 		}
 	}
 }
 
-// startMonitors 启动所有监控器
+// startMonitors 启动所有日志监控器
 func startMonitors() {
 	// 创建事件通道
 	eventChan := make(chan monitors.Event)
@@ -100,10 +105,9 @@ func startMonitors() {
 		}(m)
 	}
 
-	// 如果没有任何监控器启动，返回错误
+	// 如果没有任何监控器启动，打印提示
 	if !monitorsStarted {
 		fmt.Printf("未能启动任何日志监控，请检查配置和事件启用状态\n")
-		return
 	}
 
 	// 启动事件处理
@@ -118,6 +122,42 @@ func startMonitors() {
 	}()
 }
 
+// startConnectionMonitor 启动连接数监控器
+func startConnectionMonitor() {
+	if !globalConfig.ConnectionMonitor.Enabled {
+		fmt.Println("连接数监控未启用，跳过启动。")
+		return
+	}
+
+	fmt.Println("启动连接数监控... (每5分钟检查一次)")
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	monitorWg.Add(1)
+	defer monitorWg.Done()
+
+	for {
+		select {
+		case <-ticker.C:
+			messages, err := monitors.CheckConnections(globalConfig.ConnectionMonitor)
+			if err != nil {
+				fmt.Printf("检查连接数失败: %v\n", err)
+				continue
+			}
+
+			for _, msg := range messages {
+				fmt.Printf("连接数告警: %s\n", msg)
+				if err := notifierManager.SendTextMessage("服务器连接数告警", msg); err != nil {
+					fmt.Printf("发送连接数告警失败: %v\n", err)
+				}
+			}
+		case <-monitorStopChan:
+			fmt.Println("停止连接数监控...")
+			return
+		}
+	}
+}
+
 // StartMonitor 启动监控
 func StartMonitor() error {
 	// 初始化停止通道
@@ -126,8 +166,11 @@ func StartMonitor() error {
 	// 启动定时重启协程
 	go scheduleRestart()
 
-	// 启动监控
-	startMonitors()
+	// 启动日志监控
+	go startMonitors()
+
+	// 启动连接数监控
+	go startConnectionMonitor()
 
 	// 保持主程序运行
 	select {}

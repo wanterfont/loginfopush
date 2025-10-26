@@ -73,9 +73,18 @@ type EventConfig struct {
 	Notifiers []string  `json:"notifiers"` // 使用的通知渠道
 }
 
+// ConnectionMonitorConfig 连接监控配置
+type ConnectionMonitorConfig struct {
+	Enabled        bool `json:"enabled"`         // 是否启用
+	TCPThreshold   int  `json:"tcp_threshold"`   // TCP 连接数阈值
+	UDPThreshold   int  `json:"udp_threshold"`   // UDP 连接数阈值
+	TotalThreshold int  `json:"total_threshold"` // 总连接数阈值
+}
+
 // Config 总配置结构
 type Config struct {
-	Server    ServerConfig              `json:"server"`    // 服务器配置
-	Notifiers map[string]NotifierConfig `json:"notifiers"` // 通知渠道配置
-	Events    map[string]EventConfig    `json:"events"`    // 事件配置
+	Server            ServerConfig              `json:"server"`             // 服务器配置
+	ConnectionMonitor ConnectionMonitorConfig   `json:"connection_monitor"` // 连接监控配置
+	Notifiers         map[string]NotifierConfig `json:"notifiers"`          // 通知渠道配置
+	Events            map[string]EventConfig    `json:"events"`             // 事件配置
 }

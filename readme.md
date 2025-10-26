@@ -45,6 +45,13 @@ ___
 
 ### 服务器配置
 
+### 连接数监控配置
+在 `connection_monitor` 对象中配置：
+- `enabled`: `true` 或 `false`，是否启用此功能。
+- `tcp_threshold`: TCP 连接数阈值，超过则告警。
+- `udp_threshold`: UDP 连接数阈值，超过则告警。
+- `total_threshold`: TCP 和 UDP 总连接数阈值，超过则告警。
+
 ### 支持的通知渠道
 
 1. **FCM**
