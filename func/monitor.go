@@ -96,11 +96,11 @@ func startMonitors() {
 			continue
 		}
 		monitorsStarted = true
-		defer m.Close()
 
 		monitorWg.Add(1)
 		go func(m *monitors.LogMonitor) {
 			defer monitorWg.Done()
+			defer m.Close()
 			m.Start(eventChan, monitorStopChan)
 		}(m)
 	}
